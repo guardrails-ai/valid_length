@@ -1,19 +1,19 @@
 from guardrails import Guard
 from pydantic import BaseModel, Field
-from validator import RegexMatch
+from validator import ValidLength
 
 
 class ValidatorTestObject(BaseModel):
     test_val: str = Field(
         validators=[
-            RegexMatch(regex="a.*", match_type="fullmatch", on_fail="exception")
+            ValidLength(min=1, max=5, on_fail="exception")
         ]
     )
 
 
 TEST_OUTPUT = """
 {
-  "test_val": "a test value"
+  "test_val": "testsdfs"
 }
 """
 

@@ -1,7 +1,7 @@
 [project]
-name = "regexmatch"
+name = "valid_length"
 version = "0.0.0"
-description = "Template repo for Guardrails Hub validators."
+description = "Validates that the length of value is within the expected range."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
 ]
