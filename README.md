@@ -1,31 +1,152 @@
-# Guardrails Validator Template
-Template repository that hosts a sample validator to be used within GuardrailsHub.
+# Overview
 
-## How to create a Guardrails Validator
-- On the top right of the page, click "Use this template", select "create a new repository"  and set a name for the package.
-- Modify the class in [validator/main.py](validator/main.py) with source code for the new validator
-    - Make sure that the class still inherits from `Validator` and has the `register_validator` annotation.
-    - Set the `name` in the `register_validator` to the name of the repo and set the appropriate data type.
-- Change [validator/__init__.py](validator/__init__.py) to your new Validator classname instead of RegexMatch
-- Locally test the validator with the test instructions below
+| Developed by | Guardrails AI |
+| --- | --- |
+| Date of development | Feb 15, 2024 |
+| Validator type | Format |
+| Blog |  |
+| License | Apache 2 |
+| Input/Output | Output |
 
-* Note: This package uses a pyproject.toml file, on first run, run `pip install .` to pull down and install all dependencies
+# Description
 
-### Testing and using your validator
-- Open [test/test-validator.py](test/test-validator.py) to test your new validator 
-- Import your new validator and modify `ValidatorTestObject` accordingly
-- Modify the TEST_OUTPUT and TEST_FAIL_OUTPUT accordingly
-- Run `python test/test-validator.py` via terminal, make sure the returned output reflects the input object 
-- Write advanced tests for failures, etc.
+This validator can perform the following checks:
 
-## Upload your validator to the validator hub
-- Update the [pyproject.toml](pyproject.toml) file and make necessary changes as follows:
-    - Update the `name` field to the name of your validator
-    - Update the `description` field to a short description of your validator
-    - Update the `authors` field to your name and email
-    - Add/update the `dependencies` field to include all dependencies your validator needs.
-- If there are are any post-installation steps such as downloading tokenizers, logging into huggingface etc., update the [post-install.py](validator/post-install.py) file accordingly.
-- You can add additional files to the [validator](validator) directory, but don't rename any existing files/directories.
-    - e.g. Add any environment variables (without the values, just the keys) to the [.env](.env) file.
-- Ensure that there are no other dependencies or any additional steps required to run your validator.
-- Fill out this [form](https://forms.gle/nmxyKwzjypaqvWxbA) to get your new validator onboarded!
+1. If applying this validator on a string: ensure that a generated string is within an expected length
+2. If applying this validator on a generated JSON object: ensure that a generated list is within an expected length
+
+# Installation
+
+```bash
+$ guardrails hub install hub://guardrails/valid-length
+```
+
+# Usage Examples
+
+## Validating string output via Python
+
+In this example, we verify that an LLM generated response contains anywhere from 100-200 characters.
+
+```python
+# Import Guard and Validator
+from guardrails.hub import ValidChoices
+from guardrails import Guard
+
+# Initialize Validator
+val = ValidChoices(
+		min=100,
+		max=200,
+		on_fail="fix"
+)
+
+# Setup Guard
+guard = Guard.from_string(
+    validators=[val, ...],
+)
+
+guard.parse(
+		"Guardrails are essential for AI dev. "
+		"You can initialize guadrails for strings, JSON objects and via python and javascript."
+)  # Validator passes
+guard.parse("Guardrails are essential for AI dev.")  # Validator fails
+```
+
+## Validating JSON output via Python
+
+### Validating the length of a string field within a generated JSON
+
+This example applies the validator to a string field of a JSON object.
+
+```python
+# Import Guard and Validator
+from pydantic import BaseModel
+from guardrails.hub import ValidChoices
+from guardrails import Guard
+
+val = ValidChoices(
+		min=100,
+		max=200,
+		on_fail="fix"
+)
+
+# Create Pydantic BaseModel
+class ProductInfo(BaseModel):
+		product_name: str = Field(description="Name of the product")
+		product_summary: str = Field(
+				description="A summary of the product", validators=[val]
+		)
+
+# Create a Guard to check for valid Pydantic output
+guard = Guard.from_pydantic(output_class=PetInfo)
+
+# Run LLM output generating JSON through guard
+guard.parse("""
+{
+		"product_name": "Hairspray",
+		"product_summary": "This product helps your styled hair stay in place."
+}
+""")
+```
+
+### Validating the length of a list within a generated JSON
+
+This example applies the validator to a list of a JSON object, and ensures that the length of the list is within an expected range.
+
+```python
+# Import Guard and Validator
+from pydantic import BaseModel
+from guardrails.hub import ValidChoices
+from guardrails import Guard
+
+val = ValidChoices(
+		min=1,
+		max=2,
+		on_fail="fix"
+)
+
+# Create Pydantic BaseModels
+class ProductInfo(BaseModel):
+		"""Information about a single product."""
+		product_name: str = Field(description="Name of the product")
+		product_summary: str = Field(description="A summary of the product")
+
+class ProductCategory(BaseModel):
+		"""List of products."""
+		category_name: str = Field(description="Name of product category")
+		products: list[ProductInfo] = Field(description="List of products")
+
+# Create a Guard to check for valid Pydantic output
+guard = Guard.from_pydantic(output_class=ProductCategory)
+
+# Run LLM output generating JSON through guard
+guard.parse("""
+{
+		"category_name": "Hair care",
+		"products": [
+				{
+						"product_name": "Hair spray",
+						"product_summary": "Helps your styled hair stay in place."
+				},
+				{
+						"product_name": "Shampoo",
+						"product_summary": "Helps clean your hair."
+				}
+		]
+""")
+```
+
+## Validating string output via RAIL
+
+tbd
+
+## Validating JSON output via RAIL
+
+tbd
+
+# API Reference
+
+`__init__`
+
+- `min`: Min expected length of the object (str, list).
+- `max`: Max expected length of the object (str, list).
+- `on_fail`: The policy to enact when a validator fails.
