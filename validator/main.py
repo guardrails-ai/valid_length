@@ -1,6 +1,5 @@
 import string
 from typing import Callable, Dict, List, Optional, Union
-
 import rstr
 
 from guardrails.logger import logger
@@ -20,11 +19,12 @@ class ValidLength(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `length`                          |
-    | Supported data types          | `string`, `list`, `object`        |
-    | Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
+    | Property                      | Description                                               |
+    | ----------------------------- | --------------------------------------------------------- |
+    | Name for `format` attribute   | `guardrails/valid_length`                                 |
+    | Supported data types          | `string`, `list`                                          |
+    | Programmatic fix              | If shorter than the minimum, pad with empty last elements
+    |                                 If longer than the maximum, truncate.                     |
 
     Args:
         min: The inclusive minimum length.
