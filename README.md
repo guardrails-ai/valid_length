@@ -4,7 +4,7 @@
 | --- | --- |
 | Date of development | Feb 15, 2024 |
 | Validator type | Format |
-| Blog |  |
+| Blog | - |
 | License | Apache 2 |
 | Input/Output | Output |
 
@@ -12,78 +12,38 @@
 
 This validator can perform the following checks:
 
-1. If applying this validator on a string: ensure that a generated string is within an expected length
-2. If applying this validator on a generated JSON object: ensure that a generated list is within an expected length
+1. If applying this validator on a string: ensures that a generated string is of an expected length
+2. If applying this validator on a generated JSON object: ensures that a generated list is of an expected length
 
 ## Installation
 
 ```bash
-$ guardrails hub install hub://guardrails/valid_length
+guardrails hub install hub://guardrails/valid_length
 ```
 
 ## Usage Examples
 
 ### Validating string output via Python
 
-In this example, we verify that an LLM generated response contains anywhere from 100-200 characters.
+In this example, we verify that an LLM generated response contains anywhere from 3-6 characters.
 
 ```python
 # Import Guard and Validator
-from guardrails.hub import ValidChoices
 from guardrails import Guard
-
-# Initialize Validator
-val = ValidChoices(
-    min=100,
-    max=200,
-    on_fail="fix"
-)
+from guardrails.hub import ValidLength
 
 # Setup Guard
-guard = Guard.from_string(
-    validators=[val, ...],
-)
+guard = Guard().use(ValidLength, min=3, max=6, on_fail="exception")
+response = guard.validate("hello")  # Validator passes
 
-guard.parse(
-    "Guardrails are essential for AI dev. "
-    "You can initialize guadrails for strings, JSON objects and via python and javascript."
-)  # Validator passes
-guard.parse("Guardrails are essential for AI dev.")  # Validator fails
+try:
+    response = guard.validate("hello world!")  # Validator fails
+except Exception as e:
+    print(e)
 ```
-
-### Validating the length of a string field within a generated JSON
-
-This example applies the validator to a string field of a JSON object.
-
-```python
-# Import Guard and Validator
-from pydantic import BaseModel
-from guardrails.hub import ValidChoices
-from guardrails import Guard
-
-val = ValidChoices(
-    min=100,
-    max=200,
-    on_fail="fix"
-)
-
-# Create Pydantic BaseModel
-class ProductInfo(BaseModel):
-    product_name: str = Field(description="Name of the product")
-    product_summary: str = Field(
-        description="A summary of the product", validators=[val]
-    )
-
-# Create a Guard to check for valid Pydantic output
-guard = Guard.from_pydantic(output_class=PetInfo)
-
-# Run LLM output generating JSON through guard
-guard.parse("""
-{
-    "product_name": "Hairspray",
-    "product_summary": "This product helps your styled hair stay in place."
-}
-""")
+Output:
+```console
+Validation failed for field with errors: Value has length greater than 6. Please return a shorter output, that is shorter than 6 characters.
 ```
 
 ### Validating the length of a list within a generated JSON
@@ -92,45 +52,80 @@ This example applies the validator to a list of a JSON object, and ensures that 
 
 ```python
 # Import Guard and Validator
-from pydantic import BaseModel
-from guardrails.hub import ValidChoices
+from pydantic import BaseModel, Field
+from guardrails.hub import ValidLength
 from guardrails import Guard
 
-val = ValidChoices(
-    min=1,
-    max=2,
-    on_fail="fix"
-)
+val = ValidLength(min=1, max=2, on_fail="exception")
+
 
 # Create Pydantic BaseModels
 class ProductInfo(BaseModel):
     """Information about a single product."""
+
     product_name: str = Field(description="Name of the product")
     product_summary: str = Field(description="A summary of the product")
 
+
 class ProductCategory(BaseModel):
     """List of products."""
+
     category_name: str = Field(description="Name of product category")
-    products: list[ProductInfo] = Field(description="List of products")
+    products: list[ProductInfo] = Field(
+        description="List of products", validators=[val]
+    )
+
 
 # Create a Guard to check for valid Pydantic output
 guard = Guard.from_pydantic(output_class=ProductCategory)
 
 # Run LLM output generating JSON through guard
-guard.parse("""
-{
-    "category_name": "Hair care",
-    "products": [
+guard.parse(
+    """
+    {
+        "category_name": "Hair care",
+        "products": [
+            {
+                "product_name": "Hair spray",
+                "product_summary": "Helps your styled hair stay in place."
+            },
+            {
+                "product_name": "Shampoo",
+                "product_summary": "Helps clean your hair."
+            }
+        ]
+    """
+)
+
+try:
+    # Run LLM output generating JSON through guard
+    guard.parse(
+        """
         {
-            "product_name": "Hair spray",
-            "product_summary": "Helps your styled hair stay in place."
-        },
-        {
-            "product_name": "Shampoo",
-            "product_summary": "Helps clean your hair."
+            "category_name": "Hair care",
+            "products": [
+                {
+                    "product_name": "Hair spray",
+                    "product_summary": "Helps your styled hair stay in place."
+                },
+                {
+                    "product_name": "Shampoo",
+                    "product_summary": "Helps clean your hair."
+                },
+                {
+                    "product_name": "Conditioner",
+                    "product_summary": "Helps condition your hair."
+                }
+            ]
         }
-    ]
-""")
+        """
+    )
+except Exception as e:
+    print(e)
+```
+Output:
+```console
+Validation failed for field with errors: Value has length greater than 2. Please return a shorter output, that is shorter than 2 characters.
 ```
 
 ## API Reference
@@ -150,7 +145,7 @@ Initializes a new instance of the Validator class.
 
 <br>
 
-**`__call__(self, value, metadata={}) → ValidationOutcome`**
+**`__call__(self, value, metadata={}) → ValidationResult`**
 
 <ul>
 
