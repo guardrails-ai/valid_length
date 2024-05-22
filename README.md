@@ -38,7 +38,9 @@ from guardrails import Guard
 from guardrails.hub import ValidLength
 
 # Setup Guard
-guard = Guard().use(ValidLength, min=3, max=6, on_fail="exception")
+guard = Guard().use(
+    ValidLength, min=3, max=6, on_fail="exception"
+)
 response = guard.validate("hello")  # Validator passes
 
 try:
@@ -143,7 +145,7 @@ Initializes a new instance of the Validator class.
 </ul>
 <br/>
 
-**`__call__(self, value, metadata={}) → ValidationResult`**
+**`__call__(self, value, metadata={}) -> ValidationResult`**
 <ul>
 Validates the given `value` using the rules defined in this validator, relying on the `metadata` provided to customize the validation process. This method is automatically invoked by `guard.parse(...)`, ensuring the validation logic is applied to the input data.
 
