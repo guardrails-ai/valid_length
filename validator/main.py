@@ -51,19 +51,16 @@ class ValidLength(Validator):
             logger.debug(f"Value {value} is less than {self._min}.")
 
             # Repeat the last character to make the value the correct length.
+            if not value:
+                last_val = rstr.rstr(string.ascii_lowercase, 1)
+            else:
+                last_val = value[-1]
             if isinstance(value, str):
-                if not value:
-                    last_val = rstr.rstr(string.ascii_lowercase, 1)
-                else:
-                    last_val = value[-1]
                 corrected_value = value + last_val * (self._min - len(value))
             else:
-                if not value:
-                    last_val = [rstr.rstr(string.ascii_lowercase, 1)]
-                else:
-                    last_val = [value[-1]]
                 # extend value by padding it out with last_val
-                corrected_value = value.extend([last_val] * (self._min - len(value)))
+                corrected_value = [v for v in (value or [])]
+                corrected_value.extend([last_val] * (self._min - len(value)))
 
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
